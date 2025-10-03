@@ -33,36 +33,71 @@ export default defineConfig({
 
   /* Configure projects for major browsers */
   projects: [
-    // Setup project - runs first to authenticate
+    // Setup projects - run first to authenticate
     { name: 'setup', testMatch: /.*\.setup\.ts/ },
 
+    // Backend tests (Salesforce)
     {
-      name: 'chromium',
+      name: 'chromium-backend',
       use: { 
         ...devices['Desktop Chrome'],
-        // Use prepared auth state
         storageState: 'playwright/.auth/salesforce.json',
       },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*frontend.*\.spec\.ts/,
       dependencies: ['setup'],
     },
 
     {
-      name: 'firefox',
+      name: 'firefox-backend',
       use: { 
         ...devices['Desktop Firefox'],
-        // Use prepared auth state
         storageState: 'playwright/.auth/salesforce.json',
       },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*frontend.*\.spec\.ts/,
       dependencies: ['setup'],
     },
 
     {
-      name: 'webkit',
+      name: 'webkit-backend',
       use: { 
         ...devices['Desktop Safari'],
-        // Use prepared auth state
         storageState: 'playwright/.auth/salesforce.json',
       },
+      testMatch: /.*\.spec\.ts/,
+      testIgnore: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup'],
+    },
+
+    // Frontend tests (GovUK)
+    {
+      name: 'chromium-frontend',
+      use: { 
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/govuk-frontend.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup'],
+    },
+
+    {
+      name: 'firefox-frontend',
+      use: { 
+        ...devices['Desktop Firefox'],
+        storageState: 'playwright/.auth/govuk-frontend.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup'],
+    },
+
+    {
+      name: 'webkit-frontend',
+      use: { 
+        ...devices['Desktop Safari'],
+        storageState: 'playwright/.auth/govuk-frontend.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
       dependencies: ['setup'],
     },
 

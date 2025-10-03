@@ -96,15 +96,25 @@ npx playwright show-report
 
 ```
 ├── tests/
-│   ├── auth.setup.ts           # Salesforce backend authentication setup
-│   ├── frontendauth.setup.ts   # GovUK frontend authentication setup
-│   └── *.spec.ts              # Test files
-├── playwright/.auth/           # Saved authentication state (gitignored)
-│   ├── salesforce.json         # Salesforce session
-│   └── govuk-frontend.json     # GovUK frontend session
-├── playwright.config.ts        # Playwright configuration
-└── .env                       # Environment variables (gitignored)
+│   ├── auth.setup.ts                    # Salesforce backend authentication setup
+│   ├── frontendauth.setup.ts            # GovUK frontend authentication setup
+│   ├── *.spec.ts                       # Backend test files (Salesforce)
+│   └── *.frontend.spec.ts              # Frontend test files (GovUK)
+├── playwright/.auth/                    # Saved authentication state (gitignored)
+│   ├── salesforce.json                 # Salesforce session
+│   └── govuk-frontend.json             # GovUK frontend session
+├── playwright.config.ts                 # Playwright configuration
+└── .env                                # Environment variables (gitignored)
 ```
+
+## Test Naming Convention
+
+- **Backend tests** (Salesforce): `*.spec.ts` - These tests will use `salesforce.json` authentication
+- **Frontend tests** (GovUK): `*.frontend.spec.ts` - These tests will use `govuk-frontend.json` authentication
+
+Example:
+- `createrecord.spec.ts` → Backend test (Salesforce auth)
+- `updateorganisationsectioncoversheet.frontend.spec.ts` → Frontend test (GovUK auth)
 
 ## Security Notes
 
