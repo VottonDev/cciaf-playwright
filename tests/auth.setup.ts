@@ -18,19 +18,31 @@ setup('authenticate with Salesforce', async ({ page }) => {
   await page.getByRole('textbox', { name: 'Password' }).fill(process.env.SALESFORCE_PASSWORD || '');
   await page.getByRole('button', { name: 'Log In to Sandbox' }).click();
   
-  // Wait for 2FA verification code page to appear
-  console.log('⏳ Waiting for 2FA verification page...');
+  // Check if 2FA is required or if we're redirected directly to the Lightning interface
+  console.log('⏳ Checking for 2FA requirement...');
+  
+  // Race between 2FA page appearing and direct redirect to Lightning
   const verificationCodeInput = page.getByRole('textbox', { name: 'Verification Code' });
-  await verificationCodeInput.waitFor({ state: 'visible', timeout: 30000 });
   
-  console.log('🔐 2FA page detected. Please check your email/phone for the verification code.');
-  console.log('📝 You have 2 minutes to enter the verification code and click Verify.');
-  
-  // Wait for successful authentication by checking if we've navigated to the Lightning interface
-  // This will wait until you manually enter the verification code and click Verify
-  // Salesforce redirects through /one/one.app to /lightning/page/home
-  // Pattern matches both production and sandbox URLs
-  await page.waitForURL('**/lightning/**', { timeout: 120000 }); // 2 minutes to allow for manual 2FA entry
+  try {
+    // Wait up to 10 seconds to see if 2FA page appears
+    await verificationCodeInput.waitFor({ state: 'visible', timeout: 10000 });
+    
+    console.log('🔐 2FA page detected. Please check your email/phone for the verification code.');
+    console.log('📝 You have 2 minutes to enter the verification code and click Verify.');
+    
+    // Wait for successful authentication after manual 2FA entry
+    await page.waitForURL('**/lightning/**', { timeout: 120000 }); // 2 minutes to allow for manual 2FA entry
+    
+  } catch (error) {
+    // 2FA page didn't appear - check if we're already at Lightning
+    console.log('ℹ️  2FA page not detected, checking if already authenticated...');
+    
+    // Wait for Lightning interface (with a shorter timeout since we expect to be there already)
+    await page.waitForURL('**/lightning/**', { timeout: 30000 });
+    
+    console.log('✅ Authentication succeeded without 2FA (already trusted device).');
+  }
   
   console.log('✅ Successfully authenticated!');
   
