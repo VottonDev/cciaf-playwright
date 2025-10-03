@@ -24,32 +24,46 @@ npx playwright install
 
 ## Authentication Setup
 
-This project uses Playwright's [authentication state management](https://playwright.dev/docs/auth) to handle Salesforce login with 2FA. You authenticate once and the session is saved and reused across all tests.
+This project uses Playwright's [authentication state management](https://playwright.dev/docs/auth) to handle authentication for both Salesforce backend (with 2FA) and GovUK frontend. You authenticate once for each and the sessions are saved and reused across all tests.
 
 ### First Time Setup
 
 1. Create a `.env` file in the project root:
 
 ```env
+# Salesforce Backend Authentication
 SALESFORCE_USERNAME=your-username@example.gov.uk
 SALESFORCE_PASSWORD=your-password
+
+# GovUK Frontend Authentication
+GOVUK_EMAIL=your-email@example.com
+GOVUK_PASSWORD=your-password
 ```
 
 2. Run the authentication setup:
 
+**For Salesforce Backend (with 2FA):**
+```bash
+npx playwright test auth.setup --headed
+```
+
+The browser will open, automatically enter your credentials, and wait for you to manually enter the 2FA verification code. After successful login, the session is saved to `playwright/.auth/salesforce.json`.
+
+**For GovUK Frontend:**
+```bash
+npx playwright test frontendauth.setup --headed
+```
+
+The browser will open, automatically sign in with your credentials, and save the session to `playwright/.auth/govuk-frontend.json`.
+
+**Or run both at once:**
 ```bash
 npx playwright test --project=setup --headed
 ```
-
-The browser will open, automatically enter your credentials, and wait for you to manually enter the 2FA verification code. After successful login, the session is saved and all future tests will use it automatically.
 
 ### Re-authenticating
 
-If your session expires (you'll see login pages during tests), simply re-run:
-
-```bash
-npx playwright test --project=setup --headed
-```
+If your session expires (you'll see login pages during tests), simply re-run the appropriate setup command above.
 
 ## Running Tests
 
@@ -82,9 +96,12 @@ npx playwright show-report
 
 ```
 ├── tests/
-│   ├── auth.setup.ts           # Authentication setup
+│   ├── auth.setup.ts           # Salesforce backend authentication setup
+│   ├── frontendauth.setup.ts   # GovUK frontend authentication setup
 │   └── *.spec.ts              # Test files
 ├── playwright/.auth/           # Saved authentication state (gitignored)
+│   ├── salesforce.json         # Salesforce session
+│   └── govuk-frontend.json     # GovUK frontend session
 ├── playwright.config.ts        # Playwright configuration
 └── .env                       # Environment variables (gitignored)
 ```
