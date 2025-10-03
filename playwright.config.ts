@@ -36,6 +36,16 @@ export default defineConfig({
     // Setup projects - run first to authenticate
     { name: 'setup', testMatch: /.*\.setup\.ts/ },
 
+    // Dev scripts - developer utility scripts (run independently, no auth state)
+    {
+      name: 'devscripts',
+      testMatch: /.*\.devscript\.ts/,
+      use: {
+        ...devices['Desktop Chrome'],
+        // No storageState - these scripts handle their own authentication
+      },
+    },
+
     // Backend tests (Salesforce)
     {
       name: 'chromium-backend',
