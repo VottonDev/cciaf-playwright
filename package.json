@@ -9,8 +9,11 @@
   "license": "ISC",
   "type": "module",
   "devDependencies": {
+    "@axe-core/playwright": "^4.10.2",
     "@playwright/test": "^1.55.1",
     "@types/node": "^24.6.1",
-    "dotenv": "^17.2.3"
+    "axe-html-reporter": "^2.2.11",
+    "dotenv": "^17.2.3",
+    "monocart-reporter": "^2.9.23"
   }
 }

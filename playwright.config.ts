@@ -20,33 +20,49 @@ export default defineConfig({
   retries: process.env.CI ? 2 : 0,
   /* Opt out of parallel tests on CI. */
   workers: process.env.CI ? 1 : undefined,
-  /* Reporter to use. See https://playwright.dev/docs/test-reporters */
-  reporter: 'html',
+  
+  /* Reporter to use - Monocart for enhanced reporting */
+  reporter: [
+    ['html', {
+      outputFolder: 'playwright-report',
+      open: 'never'
+    }],
+    ['monocart-reporter', {
+      name: 'CCIAF Playwright Test Report',
+      outputFile: './test-results/monocart-report.html',
+      coverage: {
+        entryFilter: (entry) => true,
+        sourceFilter: (sourcePath) => sourcePath.search(/node_modules/) === -1,
+      },
+      trend: './test-results/trend',
+    }]
+  ],
+  
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
-    /* Base URL to use in actions like `await page.goto('')`. */
-    // baseURL: 'http://localhost:3000',
-
-    /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
+    screenshot: 'only-on-failure',
+    video: 'retain-on-failure',
   },
 
-  /* Configure projects for major browsers */
   projects: [
-    // Setup projects - run first to authenticate
-    { name: 'setup', testMatch: /.*\.setup\.ts/ },
+    { 
+      name: 'setup-salesforce', 
+      testMatch: /auth\.setup\.ts/ 
+    },
+    { 
+      name: 'setup-frontend', 
+      testMatch: /frontendauth\.setup\.ts/ 
+    },
 
-    // Dev scripts - developer utility scripts (run independently, no auth state)
     {
       name: 'devscripts',
       testMatch: /.*\.devscript\.ts/,
       use: {
         ...devices['Desktop Chrome'],
-        // No storageState - these scripts handle their own authentication
       },
     },
 
-    // Backend tests (Salesforce)
     {
       name: 'chromium-backend',
       use: { 
@@ -55,7 +71,7 @@ export default defineConfig({
       },
       testMatch: /.*\.spec\.ts/,
       testIgnore: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-salesforce'],
     },
 
     {
@@ -66,7 +82,7 @@ export default defineConfig({
       },
       testMatch: /.*\.spec\.ts/,
       testIgnore: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-salesforce'],
     },
 
     {
@@ -77,10 +93,9 @@ export default defineConfig({
       },
       testMatch: /.*\.spec\.ts/,
       testIgnore: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-salesforce'],
     },
 
-    // Frontend tests (GovUK)
     {
       name: 'chromium-frontend',
       use: { 
@@ -88,7 +103,7 @@ export default defineConfig({
         storageState: 'playwright/.auth/govuk-frontend.json',
       },
       testMatch: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-frontend'],
     },
 
     {
@@ -98,7 +113,7 @@ export default defineConfig({
         storageState: 'playwright/.auth/govuk-frontend.json',
       },
       testMatch: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-frontend'],
     },
 
     {
@@ -108,28 +123,38 @@ export default defineConfig({
         storageState: 'playwright/.auth/govuk-frontend.json',
       },
       testMatch: /.*frontend.*\.spec\.ts/,
-      dependencies: ['setup'],
+      dependencies: ['setup-frontend'],
     },
 
-    /* Test against mobile viewports. */
-    // {
-    //   name: 'Mobile Chrome',
-    //   use: { ...devices['Pixel 5'] },
-    // },
-    // {
-    //   name: 'Mobile Safari',
-    //   use: { ...devices['iPhone 12'] },
-    // },
+    {
+      name: 'chromium-frontend-pr',
+      use: { 
+        ...devices['Desktop Chrome'],
+        storageState: 'playwright/.auth/govuk-pr.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup-frontend'],
+    },
 
-    /* Test against branded browsers. */
-    // {
-    //   name: 'Microsoft Edge',
-    //   use: { ...devices['Desktop Edge'], channel: 'msedge' },
-    // },
-    // {
-    //   name: 'Google Chrome',
-    //   use: { ...devices['Desktop Chrome'], channel: 'chrome' },
-    // },
+    {
+      name: 'firefox-frontend-pr',
+      use: { 
+        ...devices['Desktop Firefox'],
+        storageState: 'playwright/.auth/govuk-pr.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup-frontend'],
+    },
+
+    {
+      name: 'webkit-frontend-pr',
+      use: { 
+        ...devices['Desktop Safari'],
+        storageState: 'playwright/.auth/govuk-pr.json',
+      },
+      testMatch: /.*frontend.*\.spec\.ts/,
+      dependencies: ['setup-frontend'],
+    },
   ],
 
   /* Run your local dev server before starting the tests */
