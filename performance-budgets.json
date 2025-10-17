@@ -1,0 +1,35 @@
+{
+  "default": {
+    "ttfb": 600,
+    "firstContentfulPaint": 1800,
+    "largestContentfulPaint": 2200,
+    "interactionToNextPaint": 200,
+    "cumulativeLayoutShift": 0.10,
+    "totalBlockingTime": 200,
+    "requestCount": 60,
+    "transferSize": 1200000,
+    "lighthouse": {
+      "performance": 85,
+      "accessibility": 95,
+      "bestPractices": 90,
+      "seo": 90
+    }
+  },
+  "pages": {
+    "performance-dashboard": {
+      "largestContentfulPaint": 2000,
+      "interactionToNextPaint": 180,
+      "requestCount": 50
+    },
+    "performance-document-library": {
+      "largestContentfulPaint": 2600,
+      "interactionToNextPaint": 220,
+      "totalBlockingTime": 200
+    },
+    "performance-coversheet-edit": {
+      "largestContentfulPaint": 2400,
+      "interactionToNextPaint": 200,
+      "totalBlockingTime": 200
+    }
+  }
+}

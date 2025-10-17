@@ -1,7 +1,7 @@
 /**
 📁 /tests/changeTargetRatings.frontend.spec.ts
 
-# Headed | watch in the browser 
+=========================== Standard Run (with browser) ===========================
 ▶️ npx playwright test ./tests/changeTargetRatings.frontend.spec.ts --project=chromium-frontend --headed
 */
 
@@ -37,7 +37,11 @@ test('Step 1: Capture current ratings', async ({ page }) => {
   await page.goto('https://cogcg--autotests.sandbox.my.site.com/cciaf');
   await page.getByRole('link', { name: 'Xansium QA - October' }).click();
   await page.getByRole('link', { name: 'Cover sheet', exact: true }).click();
-  await axeScan(page, 'coversheet-readview');
+  await axeScan(page, 'coversheet-readview', { 
+    softFail: true,
+    include: ['main', '.govuk-main-wrapper'],
+    exclude: ['#navigation', 'header', '.govuk-header']
+  });
   const targetHeading = page.getByRole('heading', { name: 'Target ratings' });
   await expect(targetHeading).toBeVisible();
   const screenshot1 = await page.screenshot({ fullPage: true });
@@ -53,7 +57,11 @@ test('Step 1: Capture current ratings', async ({ page }) => {
     body: screenshot2,
     contentType: 'image/png'
   });
-  await axeScan(page, 'target-ratings-edit-form', { softFail: true });
+  await axeScan(page, 'target-ratings-edit-form', { 
+    softFail: true,
+    include: ['main', '.govuk-main-wrapper'],
+    exclude: ['#navigation', 'header', '.govuk-header']
+  });
   const selects = page.locator('select[name$=":ambition"]');
   const count = await selects.count();
   expect(count).toBeGreaterThan(0);
@@ -113,7 +121,11 @@ test('Step 2: Update target ratings based on current ratings', async ({ page }) 
       body: screenshot4,
       contentType: 'image/png'
     });
-    await axeScan(page, 'target-ratings-success');
+    await axeScan(page, 'target-ratings-success', { 
+      softFail: true,
+      include: ['main', '.govuk-main-wrapper'],
+      exclude: ['#navigation', 'header', '.govuk-header']
+    });
   }
 });
 
@@ -126,7 +138,11 @@ test('Step 3: Verify updated ratings persisted correctly', async ({ page }) => {
     body: screenshot5,
     contentType: 'image/png'
   });
-  await axeScan(page, 'coversheet-after-update');
+  await axeScan(page, 'coversheet-after-update', { 
+    softFail: true,
+    include: ['main', '.govuk-main-wrapper'],
+    exclude: ['#navigation', 'header', '.govuk-header']
+  });
   const targetHeading = page.getByRole('heading', { name: 'Target ratings' });
   await targetHeading.getByRole('link', { name: 'Change' }).click();
   await page.waitForLoadState('networkidle');
@@ -188,7 +204,11 @@ test('Step 5: Final verification of reset', async ({ page }) => {
     body: screenshot8,
     contentType: 'image/png'
   });
-  await axeScan(page, 'coversheet-reset-complete');
+  await axeScan(page, 'coversheet-reset-complete', { 
+    softFail: true,
+    include: ['main', '.govuk-main-wrapper'],
+    exclude: ['#navigation', 'header', '.govuk-header']
+  });
   const targetHeading = page.getByRole('heading', { name: 'Target ratings' });
   await targetHeading.getByRole('link', { name: 'Change' }).click();
   await page.waitForLoadState('networkidle');

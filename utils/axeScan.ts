@@ -10,6 +10,7 @@ interface ScanOptions {
   failOnImpacts?: Impact[];
   softFail?: boolean;
   screenshot?: boolean;
+  rules?: string[];
 }
 
 export async function axeScan(
@@ -21,12 +22,19 @@ export async function axeScan(
   const softFail = opts.softFail ?? false;
   const screenshot = opts.screenshot ?? true;
 
-  let builder = new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']);
+  let builder = new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice']);
+
+  // Apply custom rules if provided (array of rule IDs)
+  if (opts.rules && opts.rules.length > 0) {
+    builder = builder.withRules(opts.rules);
+  }
+  // Otherwise let withTags handle rule selection
 
   if (opts.include?.length) {
     for (const s of opts.include) builder = builder.include(s);
   } else {
-    builder = builder.include('main, .govuk-main-wrapper, #main-content');
+    builder = builder.include('main, .govuk-main-wrapper, #main-content, body');
   }
 
   if (opts.exclude?.length) {
@@ -50,7 +58,6 @@ export async function axeScan(
     fs.writeFileSync(screenshotPath, screenshotBuffer);
   }
 
-  // Raw JSON (technical reference)
   const json = JSON.stringify(results, null, 2);
   await test.info().attach(`a11y-${label}.json`, {
     contentType: 'application/json',
@@ -59,7 +66,6 @@ export async function axeScan(
   const jsonPath = test.info().outputPath(`a11y-${label}.json`);
   fs.writeFileSync(jsonPath, json, 'utf-8');
 
-  // Stakeholder-friendly report
   const report = buildStakeholderReport(label, url, timestamp, results, toFail, opts);
   await test.info().attach(`a11y-${label}.md`, {
     contentType: 'text/markdown',
@@ -107,8 +113,8 @@ function buildStakeholderReport(
   report += `**Date:** ${timestamp}\n\n`;
   report += `**Page:** ${url}\n\n`;
   report += `**Tested with:** ${results.testEngine?.name || 'axe-core'} ${results.testEngine?.version || 'unknown'}\n\n`;
-  report += `**WCAG Level:** 2.0 Level A and AA\n\n`;
-  report += `**Scope:** ${opts.include?.join(', ') || 'main, .govuk-main-wrapper, #main-content'}\n\n`;
+  report += `**WCAG Level:** 2.1 Level A and AA (GDS Standard)\n\n`;
+  report += `**Scope:** ${opts.include?.join(', ') || 'main, .govuk-main-wrapper, #main-content, body'}\n\n`;
   if (opts.exclude?.length) {
     report += `**Excluded:** ${opts.exclude.join(', ')}\n\n`;
   }
@@ -119,9 +125,9 @@ function buildStakeholderReport(
   if (criticalViolations.length === 0) {
     report += `## ✅ PASS - No Critical Violations\n\n`;
     if (allViolations.length === 0) {
-      report += `This page meets WCAG 2.0 Level A and AA requirements.\n\n`;
+      report += `This page meets WCAG 2.1 Level A and AA requirements (GDS Service Standard Point 5).\n\n`;
     } else {
-      report += `This page has no critical or serious violations. Minor/moderate issues may exist but do not block release.\n\n`;
+      report += `This page has no critical or serious violations. Minor/moderate issues may exist but do not block service assessment.\n\n`;
     }
     report += `- **Critical/Serious violations:** 0\n`;
     report += `- **All violations:** ${allViolations.length}\n`;
@@ -185,11 +191,38 @@ function buildStakeholderReport(
     report += `\n`;
   }
 
+  // GDS Service Assessment guidance
+  report += `\n---\n\n`;
+  report += `## 📋 GDS Service Assessment Guidance\n\n`;
+  report += `**Service Standard Point 5:** Make sure everyone can use the service\n\n`;
+  
+  if (criticalViolations.length === 0) {
+    report += `✅ This page meets the accessibility requirements for GDS assessment.\n\n`;
+    report += `**Next steps:**\n`;
+    report += `- Include this report in your Service Assessment evidence\n`;
+    report += `- Book a DAC audit to validate these automated findings\n`;
+    report += `- Test with real assistive technology users\n\n`;
+  } else {
+    report += `❌ This page does NOT meet GDS accessibility requirements.\n\n`;
+    report += `**Before Service Assessment:**\n`;
+    report += `1. Fix all critical and serious violations listed above\n`;
+    report += `2. Re-run automated tests to verify fixes\n`;
+    report += `3. Test with real assistive technology (screen readers, keyboard-only)\n`;
+    report += `4. Book a DAC audit once automated tests pass\n\n`;
+  }
+  
+  report += `**References:**\n`;
+  report += `- [Understanding WCAG 2.1](https://www.gov.uk/service-manual/helping-people-to-use-your-service/understanding-wcag)\n`;
+  report += `- [Testing for accessibility](https://www.gov.uk/service-manual/helping-people-to-use-your-service/testing-for-accessibility)\n`;
+  report += `- [Making your service accessible](https://www.gov.uk/service-manual/helping-people-to-use-your-service/making-your-service-accessible-an-introduction)\n\n`;
+
   return report;
 }
 
 function getPlainEnglishExplanation(ruleId: string): string {
   const explanations: Record<string, string> = {
+    'list': 'A `<ul>` or `<ol>` contains elements that are not `<li>`, `<script>`, or `<template>`. This breaks the list structure for screen readers - they cannot properly announce list items and navigation becomes confusing.',
+    'listitem': 'List items (`<li>`) exist outside of a proper `<ul>` or `<ol>` container. Screen readers cannot announce them as list items, breaking the semantic structure users rely on.',
     'select-name': 'Dropdown menus (select elements) are missing labels. Screen reader users cannot tell what the dropdown is for.',
     'label': 'Form inputs are missing labels. Users cannot tell what information to enter.',
     'button-name': 'Buttons are missing accessible names. Screen reader users cannot tell what the button does.',
@@ -206,11 +239,13 @@ function getPlainEnglishExplanation(ruleId: string): string {
     'region': 'Content is not contained within landmarks. Screen reader users cannot navigate efficiently.',
   };
 
-  return explanations[ruleId] || `This violates WCAG 2.0 requirements for \`${ruleId}\`. Refer to documentation for details.`;
+  return explanations[ruleId] || `This violates WCAG 2.1 requirements for \`${ruleId}\`. Refer to documentation for details.`;
 }
 
 function getFixInstructions(ruleId: string): string {
   const fixes: Record<string, string> = {
+    'list': '**Inspect the HTML structure:**\n\n```html\n<!-- ❌ Wrong: Extra wrapper inside <ul> -->\n<ul>\n  <div class="wrapper">\n    <li>Item 1</li>\n    <li>Item 2</li>\n  </div>\n</ul>\n\n<!-- ✅ Correct: Only <li> directly inside <ul> -->\n<ul>\n  <li><div class="wrapper">Item 1</div></li>\n  <li><div class="wrapper">Item 2</div></li>\n</ul>\n```\n\n**Steps to fix:**\n1. Find the `<ul>` or `<ol>` element using the selector above\n2. Check what elements are direct children\n3. Move any `<div>` or other wrappers inside the `<li>` elements\n4. If using a component library, check the rendered HTML output',
+    'listitem': '**Ensure list items are properly wrapped:**\n\n```html\n<!-- ❌ Wrong: <li> without parent list -->\n<div>\n  <li>Orphaned item</li>\n</div>\n\n<!-- ✅ Correct: <li> inside <ul> -->\n<ul>\n  <li>Proper item</li>\n</ul>\n```\n\n**Steps to fix:**\n1. Find the orphaned `<li>` elements using the selectors above\n2. Wrap them in a `<ul>` (unordered list) or `<ol>` (ordered list)\n3. If these elements shouldn\'t be list items, change them to `<div>` and style with CSS',
     'select-name': '- Add a `<label>` element that wraps or references the select\n- OR add `aria-label="Description"` to the select element\n- OR add `aria-labelledby="heading-id"` to connect it to existing text',
     'label': '- Wrap the input in a `<label>` element\n- OR add a separate `<label for="input-id">` that references the input\n- OR add `aria-label="Description"` to the input',
     'button-name': '- Add text content inside the button: `<button>Submit</button>`\n- OR add `aria-label="Action description"` to the button\n- OR add `title="Action description"` attribute',

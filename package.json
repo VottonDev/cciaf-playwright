@@ -13,7 +13,10 @@
     "@playwright/test": "^1.55.1",
     "@types/node": "^24.6.1",
     "axe-html-reporter": "^2.2.11",
+    "chrome-launcher": "^1.2.1",
     "dotenv": "^17.2.3",
-    "monocart-reporter": "^2.9.23"
+    "lighthouse": "^12.8.2",
+    "monocart-reporter": "^2.9.23",
+    "typescript": "^5.9.3"
   }
 }
